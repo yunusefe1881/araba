@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro-Athlete | Diyet, Antrenman ve Maç Takvimi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #ff4d05; /* Basketbol Turuncusu */
+            --secondary-color: #2ecc71; /* Futbol Yeşili */
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --text-light: #f8fafc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.6;
+        }
+
+        /* Header & Navigation */
+        header {
+            background: rgba(15, 23, 42, 0.9);
+            padding: 1rem 5%;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+            backdrop-filter: blur(10px);
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            text-transform: uppercase;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 20px;
+            font-weight: 500;
+            transition: 0.3s;
+        }
+
+        nav a:hover {
+            color: var(--primary-color);
+        }
+
+        /* Hero Section */
+        .hero {
+            height: 60vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1546519638-68e109498ffc?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+            background-size: cover;
+            background-position: center;
+            margin-top: 60px;
+        }
+
+        .hero h1 { font-size: 3.5rem; margin-bottom: 10px; }
+        .hero p { font-size: 1.2rem; color: #cbd5e1; }
+
+        /* Sections */
+        section { padding: 80px 5%; }
+        h2 { text-align: center; margin-bottom: 40px; font-size: 2.5rem; color: var(--primary-color); }
+
+        /* Maç Programı Tablosu */
+        .match-container {
+            overflow-x: auto;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+
+        th {
+            background: var(--primary-color);
+            color: white;
+            padding: 15px;
+            text-align: left;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #334155;
+        }
+
+        tr:hover { background: #334155; }
+        .status-live { color: #2ecc71; font-weight: bold; }
+
+        /* Card Designs (Antrenman ve Diyet) */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid #334155;
+            transition: transform 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            border-color: var(--primary-color);
+        }
+
+        .card h3 { margin-bottom: 15px; color: var(--primary-color); }
+        .card.football h3 { color: var(--secondary-color); }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px;
+            background: #020617;
+            border-top: 1px solid #334155;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2rem; }
+            nav { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">IST-BASKEPORTAL</div>
+        <nav>
+            <a href="#matches">30. Hafta Maçları</a>
+            <a href="#training">Antrenman</a>
+            <a href="#diet">Diyet</a>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <h1>30. HAFTA MAÇ HEYECANI</h1>
+        <p>İstanbul Altyapı Basketbol Ligleri ve Kişisel Gelişim Programları</p>
+    </section>
+
+    <!-- MAÇ PROGRAMI BÖLÜMÜ -->
+    <section id="matches">
+        <h2>🏀 İstanbul Altyapı 30. Hafta Programı</h2>
+        <div class="match-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tarih</th>
+                        <th>Saat</th>
+                        <th>Salon</th>
+                        <th>Kategori</th>
+                        <th>Ev Sahibi Takım</th>
+                        <th>Misafir Takım</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- ÖRNEK VERİLER (Drive'daki 30. hafta verilerine göre güncellenebilir) -->
+                    <tr>
+                        <td>22 Mayıs 2024</td>
+                        <td>17:30</td>
+                        <td>Küçükçekmece Spor Salonu</td>
+                        <td>U14 Erkek</td>
+                        <td>Galatasaray SK</td>
+                        <td>Anadolu Efes</td>
+                    </tr>
+                    <tr>
+                        <td>22 Mayıs 2024</td>
+                        <td>19:00</td>
+                        <td>Ahmet Cömert S.S.</td>
+                        <td>U16 Erkek</td>
+                        <td>Beşiktaş JK</td>
+                        <td>Fenerbahçe Beko</td>
+                    </tr>
+                    <tr>
+                        <td>23 Mayıs 2024</td>
+                        <td>14:00</td>
+                        <td>Caferağa Spor Salonu</td>
+                        <td>U18 Kız</td>
+                        <td>İstanbul Basket</td>
+                        <td>Emlak Konut</td>
+                    </tr>
+                    <tr>
+                        <td>24 Mayıs 2024</td>
+                        <td>18:45</td>
+                        <td>Bayrampaşa S.S.</td>
+                        <td>U12 Erkek</td>
+                        <td>Teşvikiye SK</td>
+                        <td>Darüşşafaka Lassa</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ANTRENMAN BÖLÜMÜ -->
+    <section id="training" style="background: #111827;">
+        <h2>💪 Özel Antrenman Programları</h2>
+        <div class="grid-container">
+            <!-- Basketbol -->
+            <div class="card">
+                <h3>🏀 Basketbol Altyapı</h3>
+                <ul>
+                    <li><strong>0-20 dk:</strong> Ball Handling (Crossover, Between the legs)</li>
+                    <li><strong>20-40 dk:</strong> Spot-up Shooting (5 noktadan 50 şut)</li>
+                    <li><strong>40-60 dk:</strong> Patlayıcı Kuvvet & Drive bitirişleri</li>
+                </ul>
+                <a href="#" class="btn">Programı İndir</a>
+            </div>
+            <!-- Futbol -->
+            <div class="card football">
+                <h3 style="color: #2ecc71;">⚽ Futbol Gelişim</h3>
+                <ul>
+                    <li><strong>Isınma:</strong> Dinamik esneme & 15 dk hafif tempo koşu</li>
+                    <li><strong>Teknik:</strong> Duvar pası çalışması (Her iki ayak 100 tekrar)</li>
+                    <li><strong>Kondisyon:</strong> 30 metre sprint (10 set)</li>
+                </ul>
+                <a href="#" class="btn" style="background: #2ecc71;">Programı İndir</a>
+            </div>
+            <!-- Fitness -->
+            <div class="card">
+                <h3>🏋️ Genel Atletizm</h3>
+                <p>Sporcu için core bölgesi ve denge çalışmaları. Plyometric zıplama egzersizleri.</p>
+                <a href="#" class="btn">Detayları Gör</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- DİYET BÖLÜMÜ -->
+    <section id="diet">
+        <h2>🥗 Sporcu Beslenme Programı</h2>
+        <div class="grid-container">
+            <div class="card">
+                <h3>Sabah (Enerji Deposu)</h3>
+                <p>3 Yumurta Beyazı (1 Sarısı), 50gr Yulaf, 1 Muz, 5 adet Ceviz.</p>
+            </div>
+            <div class="card">
+                <h3>Öğle (Kas Yapılandırıcı)</h3>
+                <p>150gr Tavuk Göğsü veya Izgara Köfte, 1 Tabak Esmer Pirinç Pilavı, Bol Yeşillikli Salata.</p>
+            </div>
+            <div class="card">
+                <h3>Antrenman Öncesi/Sonrası</h3>
+                <p>Öncesi: 1 Elma + Kahve. Sonrası: Protein shake veya 100gr Lor Peyniri.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2024 IST-BASKEPORTAL | İstanbul Basketbol Altyapı Takip Sistemi</p>
+        <p style="font-size: 0.8rem; color: #64748b; margin-top: 10px;">Veriler TBF İstanbul İl Temsilciliği kaynak alınarak hazırlanmıştır.</p>
+    </footer>
+
+</body>
+</html>
