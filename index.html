@@ -397,7 +397,7 @@
         <h2>🏀 İstanbul Altyapı 36-37. Hafta Programı</h2>
 
         <!-- KATEGORİ SEÇİCİ -->
-        <div id="katFiltre" style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:30px;"></div>
+        <div id="katFiltre"></div>
 
         <!-- TARİH ACCORDION -->
         <div id="macListesi"></div>
@@ -410,142 +410,392 @@
 
     var secilenKat = null;
 
-    var kategoriler = [...new Set(MACLAR.map(m => m.kat))].sort();
-
-    var katRenkler = {
-        'U10EA':'#6366f1','U10EB':'#8b5cf6','U10EC':'#a78bfa','U10KA':'#c4b5fd',
-        'U11EA':'#f59e0b','U11EB':'#fbbf24','U11EC':'#fcd34d','U11KA':'#fde68a',
-        'U12EA':'#10b981','U12EB':'#34d399','U12EC':'#6ee7b7','U12KA':'#a7f3d0','U12KB':'#d1fae5',
-        'U14EB':'#ef4444','U14EC':'#f87171',
-        'U16EB':'#ff4d05','U16EC':'#ff7738',
-        'U18EB':'#3b82f6'
-    };
+    function parseKat(kat) {
+        var m = kat.match(/^(U\d+)([EK])([A-C])$/);
+        if (!m) return { yas: kat, cinsiyet: '?', lig: '' };
+        return { yas: m[1], cinsiyet: m[2] === 'E' ? 'Erkek' : 'Kiz', lig: m[3] + ' Ligi', raw: kat };
+    }
 
     function getKatRenk(kat) {
-        return katRenkler[kat] || '#94a3b8';
+        var p = parseKat(kat);
+        if (p.cinsiyet === 'Kiz') return '#ec4899';
+        var yr = {'U10':'#6366f1','U11':'#f59e0b','U12':'#10b981','U14':'#ef4444','U16':'#ff4d05','U18':'#3b82f6'};
+        return yr[p.yas] || '#94a3b8';
+    }
+
+    // ---- KATEGORİ SEÇİCİ ----
+    var secilenYas = null;
+
+    function buildKatStil() {
+        if (document.getElementById('katSt')) return;
+        var s = document.createElement('style');
+        s.id = 'katSt';
+        s.textContent =
+            // ADIM 1: yaş kartları yatay
+            '.yas-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-bottom:32px;}' +
+            '.yas-kart{display:flex;flex-direction:column;align-items:center;gap:6px;padding:18px 22px;border-radius:16px;border:2px solid;background:transparent;cursor:pointer;font-family:Inter,sans-serif;transition:all 0.2s;min-width:80px;position:relative;}' +
+            '.yas-kart:hover{transform:translateY(-3px);}' +
+            '.yas-kart.aktif{transform:translateY(-3px);}' +
+            '.yas-kart .yk-yas{font-size:1.25rem;font-weight:900;letter-spacing:-0.5px;}' +
+            '.yas-kart .yk-sayi{font-size:0.7rem;font-weight:600;opacity:0.7;}' +
+            // ADIM 2: cinsiyet + lig seçimi (aşağı kayar panel)
+            '.lig-panel{display:none;background:#111827;border:1px solid #1e293b;border-radius:16px;padding:24px 28px;margin-bottom:28px;animation:slideDown 0.22s ease;}' +
+            '.lig-panel.ac{display:block;}' +
+            '@keyframes slideDown{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:translateY(0);}}' +
+            '.lig-panel-ust{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}' +
+            '.lig-panel-baslik{font-size:1rem;font-weight:800;color:#f1f5f9;}' +
+            '.lig-kapat{background:none;border:none;color:#475569;font-size:1.1rem;cursor:pointer;padding:4px 8px;border-radius:8px;}' +
+            '.lig-kapat:hover{color:#94a3b8;background:#1e293b;}' +
+            '.cins-blok{margin-bottom:16px;}' +
+            '.cins-blok:last-child{margin-bottom:0;}' +
+            '.cins-etiket{font-size:0.7rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:6px;}' +
+            '.cins-satirlar{display:flex;gap:8px;flex-wrap:wrap;}' +
+            '.lig-btn{display:flex;align-items:center;gap:10px;padding:10px 18px;border-radius:12px;border:1.5px solid;background:transparent;cursor:pointer;font-family:Inter,sans-serif;transition:all 0.18s;}' +
+            '.lig-btn:hover{transform:translateY(-2px);}' +
+            '.lig-btn.aktif{transform:translateY(-2px);}' +
+            '.lig-btn .lb-kod{font-size:0.9rem;font-weight:800;}' +
+            '.lig-btn .lb-lig{font-size:0.72rem;font-weight:500;opacity:0.75;}' +
+            '.lig-btn .lb-n{font-size:0.68rem;font-weight:700;padding:2px 7px;border-radius:20px;border:1px solid;margin-left:4px;}' +
+            // Tüm maçlar
+            '.tum-btn{display:block;width:100%;padding:11px;border-radius:50px;background:transparent;border:1.5px solid #334155;color:#64748b;font-family:Inter,sans-serif;font-size:0.88rem;font-weight:600;cursor:pointer;transition:all 0.2s;text-align:center;margin-bottom:20px;}' +
+            '.tum-btn:hover{border-color:#94a3b8;color:#94a3b8;}' +
+            '.tum-btn.aktif{background:#ff4d05;border-color:#ff4d05;color:#fff;}';
+        document.head.appendChild(s);
     }
 
     function initKatFiltre() {
+        buildKatStil();
         var el = document.getElementById('katFiltre');
+        var kategoriler = Array.from(new Set(MACLAR.map(function(m){ return m.kat; }))).sort();
+
+        // Yaş → {erkek:[], kiz:[]} grupla
+        var yasMap = {};
+        kategoriler.forEach(function(kat){
+            var p = parseKat(kat);
+            if (!yasMap[p.yas]) yasMap[p.yas] = { erkek:[], kiz:[] };
+            if (p.cinsiyet === 'Erkek') yasMap[p.yas].erkek.push(kat);
+            else yasMap[p.yas].kiz.push(kat);
+        });
+        var yaslar = Object.keys(yasMap).sort();
+
         el.innerHTML = '';
-        kategoriler.forEach(function(kat) {
-            var renk = getKatRenk(kat);
-            var btn = document.createElement('button');
-            btn.textContent = kat;
-            btn.dataset.kat = kat;
-            btn.style.cssText = 'padding:9px 18px;border-radius:50px;border:2px solid '+renk+';background:transparent;color:'+renk+';cursor:pointer;font-size:0.85rem;font-weight:600;font-family:Inter,sans-serif;transition:all 0.2s;';
-            btn.onclick = function() { selectKat(kat, btn, renk); };
-            el.appendChild(btn);
+
+        // Tüm maçlar butonu
+        var tb = document.createElement('button');
+        tb.className = 'tum-btn aktif';
+        tb.id = 'btnTumu';
+        tb.innerHTML = '🏀 Tüm Maçlar — ' + MACLAR.length + ' maç';
+        tb.onclick = function(){ selectKat(null); };
+        el.appendChild(tb);
+
+        // ADIM 1: yaş kartları
+        var grid = document.createElement('div');
+        grid.className = 'yas-grid';
+
+        yaslar.forEach(function(yas){
+            var toplam = MACLAR.filter(function(m){ return parseKat(m.kat).yas === yas; }).length;
+            var yasRenk = getYasRenk(yas);
+
+            var kart = document.createElement('button');
+            kart.className = 'yas-kart';
+            kart.id = 'yaskart_' + yas;
+            kart.style.borderColor = yasRenk + '55';
+            kart.style.color = yasRenk;
+            kart.innerHTML =
+                '<span class="yk-yas">' + yas + '</span>' +
+                '<span class="yk-sayi">' + toplam + ' maç</span>';
+            kart.onclick = (function(y, yr){ return function(){ toggleYasPanel(y, yr); }; })(yas, yasRenk);
+            grid.appendChild(kart);
+        });
+        el.appendChild(grid);
+
+        // ADIM 2: lig seçim paneli (başta gizli)
+        var panel = document.createElement('div');
+        panel.className = 'lig-panel';
+        panel.id = 'ligPanel';
+        el.appendChild(panel);
+    }
+
+    function getYasRenk(yas) {
+        var yr = {'U10':'#6366f1','U11':'#f59e0b','U12':'#10b981','U14':'#ef4444','U16':'#ff4d05','U18':'#3b82f6'};
+        return yr[yas] || '#94a3b8';
+    }
+
+    function toggleYasPanel(yas, yasRenk) {
+        var panel = document.getElementById('ligPanel');
+        var kategoriler = Array.from(new Set(MACLAR.map(function(m){ return m.kat; }))).sort();
+
+        // Yaş kartı aktif toggle
+        document.querySelectorAll('.yas-kart').forEach(function(k){
+            var yr = getYasRenk(k.id.replace('yaskart_',''));
+            k.style.background = 'transparent';
+            k.style.color = yr;
+            k.style.borderColor = yr + '55';
+            k.style.boxShadow = '';
+            k.classList.remove('aktif');
+        });
+
+        // Aynı yas tekrar tıklandıysa kapat
+        if (secilenYas === yas) {
+            secilenYas = null;
+            panel.classList.remove('ac');
+            panel.innerHTML = '';
+            return;
+        }
+
+        secilenYas = yas;
+
+        var aktifKart = document.getElementById('yaskart_' + yas);
+        if (aktifKart) {
+            aktifKart.style.background = yasRenk + '1a';
+            aktifKart.style.color = yasRenk;
+            aktifKart.style.borderColor = yasRenk;
+            aktifKart.style.boxShadow = '0 4px 20px ' + yasRenk + '44';
+            aktifKart.classList.add('aktif');
+        }
+
+        // Panel içeriğini doldur
+        var yasKatlar = kategoriler.filter(function(k){ return parseKat(k).yas === yas; });
+        var erkekler = yasKatlar.filter(function(k){ return parseKat(k).cinsiyet === 'Erkek'; });
+        var kizlar   = yasKatlar.filter(function(k){ return parseKat(k).cinsiyet === 'Kiz'; });
+
+        panel.innerHTML = '';
+        panel.classList.add('ac');
+
+        // Başlık + kapat
+        var ust = document.createElement('div');
+        ust.className = 'lig-panel-ust';
+        ust.innerHTML =
+            '<span class="lig-panel-baslik" style="color:' + yasRenk + ';">' + yas + ' — Lig Seç</span>';
+        var kapatBtn = document.createElement('button');
+        kapatBtn.className = 'lig-kapat';
+        kapatBtn.innerHTML = '✕';
+        kapatBtn.onclick = function(){
+            secilenYas = null;
+            panel.classList.remove('ac');
+            panel.innerHTML = '';
+            document.querySelectorAll('.yas-kart').forEach(function(k){
+                var yr = getYasRenk(k.id.replace('yaskart_',''));
+                k.style.background = 'transparent'; k.style.color = yr;
+                k.style.borderColor = yr + '55'; k.style.boxShadow = '';
+                k.classList.remove('aktif');
+            });
+        };
+        ust.appendChild(kapatBtn);
+        panel.appendChild(ust);
+
+        // Erkek + Kız blokları
+        [
+            { label: '♂ Erkek', renk: '#60a5fa', katlar: erkekler },
+            { label: '♀ Kız',   renk: '#f472b6', katlar: kizlar   }
+        ].forEach(function(grup){
+            if (!grup.katlar.length) return;
+            var blok = document.createElement('div');
+            blok.className = 'cins-blok';
+
+            var et = document.createElement('div');
+            et.className = 'cins-etiket';
+            et.style.color = grup.renk;
+            et.innerHTML = grup.label;
+            blok.appendChild(et);
+
+            var satirlar = document.createElement('div');
+            satirlar.className = 'cins-satirlar';
+
+            grup.katlar.forEach(function(kat){
+                var p = parseKat(kat);
+                var kr = grup.renk;
+                var sayim = MACLAR.filter(function(m){ return m.kat === kat; }).length;
+
+                var btn = document.createElement('button');
+                btn.className = 'lig-btn';
+                btn.id = 'ligbtn_' + kat;
+                btn.style.borderColor = kr + '55';
+                btn.style.color = kr;
+                btn.innerHTML =
+                    '<div style="display:flex;flex-direction:column;gap:2px;">' +
+                        '<span class="lb-kod">' + kat + '</span>' +
+                        '<span class="lb-lig">' + p.lig + '</span>' +
+                    '</div>' +
+                    '<span class="lb-n" style="color:' + kr + ';border-color:' + kr + '44;background:' + kr + '11;">' + sayim + '</span>';
+
+                btn.onclick = (function(k, kr2){ return function(){ selectKat(k, kr2); }; })(kat, kr);
+                satirlar.appendChild(btn);
+            });
+            blok.appendChild(satirlar);
+            panel.appendChild(blok);
         });
     }
 
-    function selectKat(kat, btn, renk) {
-        // Toggle
-        if (secilenKat === kat) {
-            secilenKat = null;
-            document.querySelectorAll('#katFiltre button').forEach(function(b) {
-                var r = getKatRenk(b.dataset.kat);
-                b.style.background = 'transparent';
-                b.style.color = r;
+    function selectKat(kat, renk) {
+        secilenKat = kat;
+
+        // tüm lig butonlarını sıfırla
+        document.querySelectorAll('.lig-btn').forEach(function(b){
+            var kr = b.id.replace('ligbtn_','');
+            var p2 = parseKat(kr);
+            var cr = p2.cinsiyet === 'Kiz' ? '#f472b6' : '#60a5fa';
+            b.style.background = 'transparent';
+            b.style.color = cr;
+            b.style.borderColor = cr + '55';
+            b.classList.remove('aktif');
+            b.style.boxShadow = '';
+        });
+
+        var tumuBtn = document.getElementById('btnTumu');
+        if (!kat) {
+            tumuBtn.classList.add('aktif');
+            document.getElementById('ligPanel').classList.remove('ac');
+            secilenYas = null;
+            document.querySelectorAll('.yas-kart').forEach(function(k){
+                var yr = getYasRenk(k.id.replace('yaskart_',''));
+                k.style.background = 'transparent'; k.style.color = yr;
+                k.style.borderColor = yr + '55'; k.style.boxShadow = '';
+                k.classList.remove('aktif');
             });
             renderMaclar(null);
             return;
         }
-        secilenKat = kat;
-        document.querySelectorAll('#katFiltre button').forEach(function(b) {
-            var r = getKatRenk(b.dataset.kat);
-            b.style.background = 'transparent';
-            b.style.color = r;
-        });
-        btn.style.background = renk;
-        btn.style.color = '#fff';
+        tumuBtn.classList.remove('aktif');
+
+        var ab = document.getElementById('ligbtn_' + kat);
+        if (ab) {
+            ab.style.background = renk + '22';
+            ab.style.color = renk;
+            ab.style.borderColor = renk;
+            ab.classList.add('aktif');
+            ab.style.boxShadow = '0 4px 16px ' + renk + '44';
+        }
+
         renderMaclar(kat);
+
+        // Maç listesine kaydır
+        setTimeout(function(){
+            var ml = document.getElementById('macListesi');
+            if (ml) ml.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 80);
     }
 
     function renderMaclar(kat) {
         var liste = document.getElementById('macListesi');
-        var yok = document.getElementById('macYok');
-        var filtered = kat ? MACLAR.filter(function(m) { return m.kat === kat; }) : MACLAR;
+        var yok   = document.getElementById('macYok');
+        var filtered = kat ? MACLAR.filter(function(m){ return m.kat === kat; }) : MACLAR;
+
+        liste.innerHTML = '';
 
         if (filtered.length === 0) {
-            liste.innerHTML = '';
             yok.style.display = 'block';
             return;
         }
         yok.style.display = 'none';
 
-        // Tarihe göre grupla
+        if (!document.getElementById('macStyle')) {
+            var st = document.createElement('style');
+            st.id = 'macStyle';
+            st.textContent =
+                '.mg-blok{margin-bottom:8px;border-radius:16px;overflow:hidden;border:1px solid #1a2540;}' +
+                '.mg-blok:hover{box-shadow:0 4px 20px rgba(0,0,0,0.4);}' +
+                '.mg-hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;cursor:pointer;user-select:none;background:#1e293b;}' +
+                '.mg-hdr:hover{background:#243044;}' +
+                '.mg-sol{display:flex;align-items:center;gap:14px;}' +
+                '.mg-bar{width:3px;border-radius:2px;height:36px;flex-shrink:0;}' +
+                '.mg-tarih{font-size:1rem;font-weight:800;color:#f1f5f9;}' +
+                '.mg-sayi{font-size:0.75rem;color:#64748b;margin-top:3px;}' +
+                '.mg-chev{font-size:0.85rem;color:#475569;transition:transform 0.22s;display:inline-block;}' +
+                '.mg-chev.ac{transform:rotate(180deg);}' +
+                '.mg-body{display:none;background:#0c1221;}' +
+                '.mg-body.ac{display:block;}' +
+                '.ms{display:flex;align-items:stretch;border-bottom:1px solid #111827;min-height:56px;}' +
+                '.ms:last-child{border-bottom:none;}' +
+                '.ms:hover{background:#0f1929;}' +
+                '.ms-saat{flex:0 0 68px;display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:800;letter-spacing:0.3px;border-right:1px solid #1a2540;}' +
+                '.ms-orta{flex:1;display:flex;align-items:center;gap:6px;padding:12px 16px;min-width:0;}' +
+                '.ms-takim{flex:1;min-width:0;font-size:0.88rem;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}' +
+                '.ms-takim-a{text-align:right;}' +
+                '.ms-takim-b{text-align:left;}' +
+                '.ms-vs{flex:0 0 30px;text-align:center;font-size:0.65rem;font-weight:900;color:#2d3d55;letter-spacing:1px;}' +
+                '.ms-meta{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:5px;padding:10px 18px 10px 10px;border-left:1px solid #1a2540;}' +
+                '.ms-rozet{font-size:0.68rem;font-weight:700;padding:2px 9px;border-radius:20px;border:1px solid;white-space:nowrap;}' +
+                '.ms-salon{font-size:0.68rem;color:#3d5068;text-align:right;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}' +
+                '.ms-grup{font-size:0.65rem;font-weight:600;padding:1px 7px;border-radius:8px;background:#151f30;color:#475569;}' +
+                '@media(max-width:680px){.ms-meta{display:none;}.ms-saat{flex:0 0 54px;}.ms-takim{font-size:0.8rem;}}';
+            document.head.appendChild(st);
+        }
+
         var gruplar = {};
-        filtered.forEach(function(m) {
+        filtered.forEach(function(m){
             if (!gruplar[m.tarih]) gruplar[m.tarih] = [];
             gruplar[m.tarih].push(m);
         });
 
         var tarihler = Object.keys(gruplar).sort();
-        liste.innerHTML = tarihler.map(function(t) {
-            var maclar = gruplar[t].sort(function(a,b) { return a.saat.localeCompare(b.saat); });
-            var ilk = maclar[0];
+
+        tarihler.forEach(function(t, idx){
+            var maclar = gruplar[t].sort(function(a,b){ return a.saat.localeCompare(b.saat); });
+            var ilk  = maclar[0];
             var renk = kat ? getKatRenk(kat) : '#ff4d05';
-            var rows = maclar.map(function(m) {
-                var kr = getKatRenk(m.kat);
-                return '<tr style="border-bottom:1px solid #1e293b;">' +
-                    '<td style="padding:12px 10px;font-weight:700;color:'+kr+';">'+m.saat+'</td>' +
-                    '<td style="padding:12px 10px;color:#e2e8f0;font-size:0.9rem;">'+m.salon+'</td>' +
-                    '<td style="padding:12px 10px;font-weight:600;color:#f8fafc;font-size:0.9rem;">'+m.a+'</td>' +
-                    '<td style="padding:12px 10px;text-align:center;color:#64748b;font-size:0.8rem;">VS</td>' +
-                    '<td style="padding:12px 10px;font-weight:600;color:#f8fafc;font-size:0.9rem;">'+m.b+'</td>' +
-                    '<td style="padding:12px 10px;"><span style="background:'+kr+'22;color:'+kr+';border:1px solid '+kr+'44;border-radius:20px;padding:3px 10px;font-size:0.75rem;font-weight:700;">'+m.kat+'</span></td>' +
-                    '<td style="padding:12px 10px;color:#64748b;font-size:0.8rem;">'+m.grup+'</td>' +
-                '</tr>';
-            }).join('');
+            var bid  = 'mg_' + t.replace(/-/g,'');
+            var cid  = bid + '_c';
 
-            var accordionId = 'acc_' + t.replace(/-/g,'');
-            return '<div style="margin-bottom:12px;border-radius:14px;overflow:hidden;border:1px solid #334155;">' +
-                '<div onclick="toggleAcc(\'' + accordionId + '\')" style="background:#1e293b;padding:16px 20px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">' +
-                    '<div style="display:flex;align-items:center;gap:14px;">' +
-                        '<span style="width:4px;height:40px;background:'+renk+';border-radius:2px;display:inline-block;"></span>' +
-                        '<div>' +
-                            '<div style="font-size:1.05rem;font-weight:800;color:#f8fafc;">'+ilk.gun+' — '+ilk.td+'</div>' +
-                            '<div style="font-size:0.8rem;color:#64748b;margin-top:2px;">'+maclar.length+' maç</div>' +
-                        '</div>' +
+            var blok = document.createElement('div');
+            blok.className = 'mg-blok';
+
+            var hdr = document.createElement('div');
+            hdr.className = 'mg-hdr';
+            hdr.innerHTML =
+                '<div class="mg-sol">' +
+                    '<div class="mg-bar" style="background:' + renk + '"></div>' +
+                    '<div>' +
+                        '<div class="mg-tarih">' + ilk.gun + ', ' + ilk.td + '</div>' +
+                        '<div class="mg-sayi">' + maclar.length + ' mac</div>' +
                     '</div>' +
-                    '<span id="'+accordionId+'_icon" style="color:'+renk+';font-size:1.2rem;transition:transform 0.3s;">▼</span>' +
                 '</div>' +
-                '<div id="'+accordionId+'" style="display:none;overflow-x:auto;background:#0f172a;">' +
-                    '<table style="width:100%;border-collapse:collapse;min-width:700px;">' +
-                        '<thead><tr style="background:#1a2540;">' +
-                            '<th style="padding:10px;text-align:left;color:#64748b;font-size:0.78rem;font-weight:600;">SAAT</th>' +
-                            '<th style="padding:10px;text-align:left;color:#64748b;font-size:0.78rem;font-weight:600;">SALON</th>' +
-                            '<th style="padding:10px;text-align:left;color:#64748b;font-size:0.78rem;font-weight:600;">EV SAHİBİ</th>' +
-                            '<th style="padding:10px;"></th>' +
-                            '<th style="padding:10px;text-align:left;color:#64748b;font-size:0.78rem;font-weight:600;">MİSAFİR</th>' +
-                            '<th style="padding:10px;text-align:left;color:#64748b;font-size:0.78rem;font-weight:600;">KATEGORİ</th>' +
-                            '<th style="padding:10px;text-align:left;color:#64748b;font-size:0.78rem;font-weight:600;">GRUP</th>' +
-                        '</tr></thead>' +
-                        '<tbody>'+rows+'</tbody>' +
-                    '</table>' +
-                '</div>' +
-            '</div>';
-        }).join('');
+                '<span class="mg-chev" id="' + cid + '">&#9660;</span>';
 
-        // İlk tarihi otomatik aç
-        if (tarihler.length > 0) {
-            var firstId = 'acc_' + tarihler[0].replace(/-/g,'');
-            toggleAcc(firstId);
-        }
+            var body = document.createElement('div');
+            body.className = 'mg-body';
+            body.id = bid;
+
+            maclar.forEach(function(m){
+                var kr = kat ? renk : getKatRenk(m.kat);
+                var satir = document.createElement('div');
+                satir.className = 'ms';
+                satir.innerHTML =
+                    '<div class="ms-saat" style="color:' + kr + ';">' + m.saat + '</div>' +
+                    '<div class="ms-orta">' +
+                        '<div class="ms-takim ms-takim-a">' + m.a + '</div>' +
+                        '<div class="ms-vs">VS</div>' +
+                        '<div class="ms-takim ms-takim-b">' + m.b + '</div>' +
+                    '</div>' +
+                    '<div class="ms-meta">' +
+                        '<span class="ms-rozet" style="color:' + kr + ';border-color:' + kr + '33;background:' + kr + '11;">' + m.kat + '</span>' +
+                        '<div class="ms-salon">' + m.salon + '</div>' +
+                        (m.grup ? '<span class="ms-grup">' + m.grup + '</span>' : '') +
+                    '</div>';
+                body.appendChild(satir);
+            });
+
+            hdr.onclick = (function(bid2, cid2){
+                return function(){
+                    var b2 = document.getElementById(bid2);
+                    var c2 = document.getElementById(cid2);
+                    if (b2) b2.classList.toggle('ac');
+                    if (c2) c2.classList.toggle('ac');
+                };
+            })(bid, cid);
+
+            blok.appendChild(hdr);
+            blok.appendChild(body);
+            liste.appendChild(blok);
+
+            if (idx === 0) {
+                body.classList.add('ac');
+                var ch = document.getElementById(cid);
+                if (ch) ch.classList.add('ac');
+            }
+        });
     }
 
-    function toggleAcc(id) {
-        var el = document.getElementById(id);
-        var icon = document.getElementById(id + '_icon');
-        if (el.style.display === 'none') {
-            el.style.display = 'block';
-            if (icon) icon.style.transform = 'rotate(180deg)';
-        } else {
-            el.style.display = 'none';
-            if (icon) icon.style.transform = 'rotate(0deg)';
-        }
-    }
 
     initKatFiltre();
     renderMaclar(null);
